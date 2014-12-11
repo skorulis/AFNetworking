@@ -661,9 +661,18 @@ static NSString * const AFNSURLSessionTaskDidSuspendNotification = @"com.alamofi
     dispatch_sync(url_session_manager_creation_queue(), ^{
         downloadTask = [self.session downloadTaskWithRequest:request];
     });
-
+    
+    if (!downloadTask && self.attemptsToRecreateUploadTasksForBackgroundSessions && self.session.configuration.identifier) {
+        for (NSUInteger attempts = 0; !downloadTask && attempts < AFMaximumNumberOfAttemptsToRecreateBackgroundSessionUploadTask; attempts++) {
+            downloadTask = [self.session downloadTaskWithRequest:request];
+        }
+    }
+    if(!downloadTask) {
+        return nil;
+    }
+    
     [self addDelegateForDownloadTask:downloadTask progress:progress destination:destination completionHandler:completionHandler];
-
+    
     return downloadTask;
 }
 
